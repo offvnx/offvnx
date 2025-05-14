@@ -76,9 +76,8 @@ def send_proxy_directly(message):
     except Exception as e:
         print(f"Lỗi khi xoá lệnh: {e}")
 
-    # Lấy vị trí, thời tiết, thời gian
+    # Lấy vị trí và thời gian
     city, region, country, lat, lon = get_location_by_ip()
-    weather = get_weather(lat, lon)
     now = datetime.now().strftime("%H:%M:%S - %d/%m/%Y")
 
     # Caption gửi kèm
@@ -89,7 +88,6 @@ def send_proxy_directly(message):
         f"🏕️ Vùng: {region}\n"
         f"🌐 Quốc gia: {country}\n"
         f"🗺️ Toạ độ: {lat}, {lon}\n"
-        f"⛅ Thời tiết: {weather}\n"
         f"⏰ Bây giờ là: {now}"
     )
 
@@ -97,6 +95,7 @@ def send_proxy_directly(message):
     filename = download_proxies()
     with open(filename, "rb") as f:
         bot.send_document(chat_id, f, caption=caption)
+
 # Tải proxy
 def download_proxies():
     filename = "proxy.txt"
@@ -134,15 +133,6 @@ def get_location_by_ip():
         return city, region, country, loc[0], loc[1]
     except:
         return "Không rõ", "", "", "0", "0"
-
-# Lấy thời tiết theo toạ độ
-def get_weather(lat, lon):
-    try:
-        base_url = f"https://wttr.in/{lat},{lon}?format=%t"
-        return requests.get(base_url).text.strip()
-    except:
-        return "Không rõ"
-
 #===================================#
 @bot.message_handler(commands=['spotify'])
 def handle_spotify_command(message):
