@@ -2311,7 +2311,6 @@ def handle_2fa(message):
             reply_to_message_id=message_id,
             parse_mode="HTML"
         )
-        bot.delete_message(chat_id, message_id)
         # Tự động xóa hướng dẫn sau 15s
         bot.delete_message(chat_id, msg.message_id, timeout=15)
         return
