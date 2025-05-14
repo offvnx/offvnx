@@ -2288,16 +2288,11 @@ def handle_kqxs(message):
         )
 
 #===================================#
-def log_2fa_request(user, ma2fa):
-    with open("2fa_request.log", "a", encoding="utf-8") as f:
-        f.write(f"{get_vietnam_time()} - {user.id} - @{user.username} - {ma2fa}\n")
-
 @bot.message_handler(commands=['2fa'])
 def handle_2fa(message):
     chat_id = message.chat.id
     message_id = message.message_id
-    user = message.from_user
-    # Check quyền truy cập group
+
     if not is_allowed_group(chat_id):
         bot.send_message(
             chat_id,
@@ -2307,23 +2302,18 @@ def handle_2fa(message):
         return
 
     params = message.text.strip().split()
-    if len(params) == 1:  # Chưa nhập mã 2FA
+    if len(params) == 1:
         msg = bot.send_message(
             chat_id,
             "⚠️ <b>Dùng mã sau lệnh /2fa</b>\nVí dụ: <code>/2fa 242RIHRGMWYHZ76GDDEZSP3XKK5TUJSQ</code>",
             reply_to_message_id=message_id,
             parse_mode="HTML"
         )
-        # Tự động xóa hướng dẫn sau 15s
-        bot.delete_message(chat_id, msg.message_id, timeout=15)
+        threading.Timer(15, lambda: safe_delete(chat_id, msg.message_id)).start()
         return
 
     ma2fa = params[1].strip().upper()
 
-    # Ghi log
-    log_2fa_request(user, ma2fa)
-
-    # Lấy mã 2FA
     try:
         response = requests.get(f"https://2fa.live/tok/{ma2fa}", timeout=5)
         res = response.json()
@@ -2339,19 +2329,11 @@ def handle_2fa(message):
 
     current_date = get_vietnam_time()
     video = "https://offvn.io.vn/bot.gif"
-    
-    # Hiển thị code dạng spoiler (ẩn đi, bấm mới hiện) để tăng bảo mật
-    spoiler_code = f"<code>{code}</code>" if ok else f"<code>{code}</code>"
 
     caption = (
-        f"<b>{current_date}\n─────────────\n🔑 Mã 2FA là:</b> {spoiler_code}"
+        f"<b>{current_date}\n─────────────\n🔑 Mã 2FA là:</b> <code>{code}</code>"
         + ("\n\n✅ <i>Mã hợp lệ!</i>" if ok else "\n\n❌ <i>Mã 2FA không hợp lệ, vui lòng kiểm tra lại.</i>")
     )
-
-    # Nút copy (nếu dùng inline keyboard)
-    markup = types.InlineKeyboardMarkup()
-    if ok:
-        markup.add(types.InlineKeyboardButton("📋 Copy 2FA", switch_inline_query=code))
 
     bot.send_video(
         chat_id,
@@ -2359,11 +2341,16 @@ def handle_2fa(message):
         caption=caption,
         reply_to_message_id=message_id,
         supports_streaming=True,
-        parse_mode="HTML",
-        reply_markup=markup if ok else None
+        parse_mode="HTML"
     )
-    # Tự động xóa tin nhắn yêu cầu người dùng sau 10 giây
-    bot.delete_message(chat_id, message_id, timeout=10)
+
+    threading.Timer(10, lambda: safe_delete(chat_id, message_id)).start()
+
+def safe_delete(chat_id, msg_id):
+    try:
+        bot.delete_message(chat_id, msg_id)
+    except Exception:
+        pass
 
 #===================================#
 def get_qr_url(bank, stk):
