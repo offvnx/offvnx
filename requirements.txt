@@ -1,1 +1,3 @@
-schedule && telebot && requests
+schedule
+telebot
+requests
