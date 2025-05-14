@@ -1827,7 +1827,6 @@ def handle_start_help(message):
         "╠ /2fa - Lấy mã Two-Factor Authentication\n"
         "╠ /fb - Check Thông Tin Facebook\n"
         "╠ /vipham - Check Phạt Nguội Xe Máy, Xe Ô Tô\n"
-        "╠ /kqxs - Xem Kết Quả Xổ Số Hôm Nay\n"
         "╠ /qrbank - Tạo QR Chuyển Khoản\n"
         "╠ /qrcode - Tạo mã QR Từ Văn Bản\n"
         "╠ /tt - Check Info Nick Tiktok\n"
@@ -2247,46 +2246,6 @@ def handle_vipham(message):
         bot.send_photo(chat_id, img_xemay, caption="Ảnh vi phạm xe máy")
     if img_oto:
         bot.send_photo(chat_id, img_oto, caption="Ảnh vi phạm ô tô")
-
-#===================================#
-@bot.message_handler(commands=['kqxs'])
-def handle_kqxs(message):
-    chat_id = message.chat.id
-    message_id = message.message_id
-    if not is_allowed_group(chat_id):
-        bot.send_message(
-            chat_id,
-            "❌ Bạn không có quyền sử dụng lệnh này. Vui lòng truy cập nhóm @nhomspamcallsms để sử dụng các lệnh.",
-            reply_to_message_id=message_id
-        )
-        return
-
-    api_url = "https://nguyenmanh.name.vn/api/xsmb?apikey=OUEaxPOl"
-    try:
-        response = requests.get(api_url, timeout=5)
-        data = response.json()
-        if data and data.get("status") == 200:
-            result = data.get("result", "Không có dữ liệu.")
-            bot.send_message(
-                chat_id,
-                f"<b>{result}</b>",
-                parse_mode="HTML",
-                reply_to_message_id=message_id
-            )
-            bot.delete_message(chat_id, message_id)
-        else:
-            bot.send_message(
-                chat_id,
-                "Lỗi khi lấy kết quả xổ số.",
-                reply_to_message_id=message_id
-            )
-    except Exception as e:
-        bot.send_message(
-            chat_id,
-            "Lỗi khi kết nối tới API hoặc xử lý dữ liệu.",
-            reply_to_message_id=message_id
-        )
-
 #===================================#
 @bot.message_handler(commands=['2fa'])
 def handle_2fa(message):
