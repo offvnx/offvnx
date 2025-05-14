@@ -814,93 +814,96 @@ def get_ff_info(message):
     message_id = message.message_id
     args = message.text.split()
     if len(args) < 2:
-        bot.reply_to(message, "Vui lòng nhập UID. Ví dụ: <code>/ff 12345678</code>", parse_mode="HTML")
+        bot.reply_to(message, "Vui lòng nhập UID. Ví dụ: <code>/ff 12345678 SG</code>", parse_mode="HTML")
         return
 
     uid = args[1]
-    url = f"https://offvn.x10.mx/php/info.php?uid={uid}"
-    response = requests.get(url)
+    region = args[2] if len(args) > 2 else "VN"  # Region mặc định là VN nếu không có
+    url = f"https://ffwlxd-info.vercel.app/player-info?region={region}&uid={uid}"
 
-    if response.status_code != 200:
-        bot.reply_to(message, "Không thể kết nối API, vui lòng thử lại sau.", parse_mode="HTML")
-        return
+    try:
+        response = requests.get(url)
+        if response.status_code != 200:
+            bot.reply_to(message, "Không thể kết nối API, vui lòng thử lại sau.", parse_mode="HTML")
+            return
 
-    data = response.json()
-    if data.get("status") != "success" or not data.get("data"):
-        bot.reply_to(message, "Không tìm thấy thông tin người chơi!", parse_mode="HTML")
-        return
+        data = response.json()
+        if not data.get("AccountInfo"):
+            bot.reply_to(message, "Không tìm thấy thông tin người chơi!", parse_mode="HTML")
+            return
 
-    d = data["data"]
-    p = d["basicInfo"]
-    clan = d.get("clanBasicInfo", {})
-    captain = d.get("captainBasicInfo", {})
-    pet = d.get("petInfo", {})
-    credit = d.get("creditScoreInfo", {})
-    profile = d.get("profileInfo", {})
-    social = d.get("socialInfo", {})
+        p = data["AccountInfo"]
+        clan = data.get("GuildInfo", {})
+        captain = data.get("captainBasicInfo", {})
+        pet = data.get("petInfo", {})
+        credit = data.get("creditScoreInfo", {})
+        profile = data.get("AccountProfileInfo", {})
+        social = data.get("socialinfo", {})
 
-    info = f"""
+        info = f"""
 <b>THÔNG TIN NGƯỜI CHƠI</b>
-👤 <b>Nickname:</b> <code>{p.get('nickname')}</code>
-🆔 <b>UID:</b> <code>{p.get('accountId')}</code>
-📈 <b>Level:</b> <code>{p.get('level')}</code>
-👍 <b>Like:</b> <code>{p.get('liked')}</code>
-🧬 <b>XP:</b> <code>{p.get('exp')}</code>
-🎖 <b>Rank:</b> <code>{p.get('rank')} / {p.get('csRank')}</code>
-🔥 <b>Điểm Rank:</b> <code>{p.get('rankingPoints')} / {p.get('csRankingPoints')}</code>
-📅 <b>Ngày tạo:</b> <code>{p.get('createAt')}</code>
-📆 <b>Đăng nhập cuối:</b> <code>{p.get('lastLoginAt')}</code>
-🌍 <b>Máy chủ:</b> <code>{p.get('region')}</code> {get_flag(p.get('region'))}
-⚙️ <b>Phiên bản:</b> <code>{p.get('releaseVersion')}</code>
+👤 <b>Nickname:</b> <code>{p.get('AccountName')}</code>
+🆔 <b>UID:</b> <code>{uid}</code>
+📈 <b>Level:</b> <code>{p.get('AccountLevel')}</code>
+👍 <b>Like:</b> <code>{p.get('AccountLikes')}</code>
+🧬 <b>XP:</b> <code>{p.get('AccountEXP')}</code>
+🎖 <b>Rank:</b> <code>{p.get('BrMaxRank')} / {p.get('CsMaxRank')}</code>
+🔥 <b>Điểm Rank:</b> <code>{p.get('BrRankPoint')} / {p.get('CsRankPoint')}</code>
+📅 <b>Ngày tạo:</b> <code>{p.get('AccountCreateTime')}</code>
+📆 <b>Đăng nhập cuối:</b> <code>{p.get('AccountLastLogin')}</code>
+🌍 <b>Máy chủ:</b> <code>{p.get('AccountRegion')}</code>
+⚙️ <b>Phiên bản:</b> <code>{p.get('ReleaseVersion')}</code>
 
 <b>THÔNG TIN GUILD</b>
-🏰 <b>Tên Quân Đoàn:</b> <code>{clan.get('clanName')}</code>
-🆔 <b>ID:</b> <code>{clan.get('clanId')}</code>
-📈 <b>Level:</b> <code>{clan.get('clanLevel')}</code>
-👥 <b>Thành viên:</b> <code>{clan.get('memberNum')}/{clan.get('capacity')}</code>
+🏰 <b>Tên Quân Đoàn:</b> <code>{clan.get('GuildName')}</code>
+🆔 <b>ID:</b> <code>{clan.get('GuildID')}</code>
+📈 <b>Level:</b> <code>{clan.get('GuildLevel')}</code>
+👥 <b>Thành viên:</b> <code>{clan.get('GuildMember')}/{clan.get('GuildCapacity')}</code>
 
 <b>CHỦ QUÂN ĐOÀN</b>
 👑 <b>Tên:</b> <code>{captain.get('nickname')}</code>
-🆔 <b>UID:</b> <code>{clan.get('captainId')}</code>
+🆔 <b>UID:</b> <code>{captain.get('accountId')}</code>
 📈 <b>Level:</b> <code>{captain.get('level')}</code>
 👍 <b>Likes:</b> <code>{captain.get('liked')}</code>
 📅 <b>Ngày tạo:</b> <code>{captain.get('createAt')}</code>
 
 <b>THÔNG TIN PET</b>
-🐾 <b>Tên:</b> <code>{pet.get('name')}</code>
+🐾 <b>ID:</b> <code>{pet.get('id')}</code>
 📈 <b>Level:</b> <code>{pet.get('level')}</code>
 ⚡️ <b>XP:</b> <code>{pet.get('exp')}</code>
 🎯 <b>Kỹ năng:</b> <code>{pet.get('selectedSkillId')}</code>
 
 <b>THÔNG TIN KHÁC</b>
 ❤️ <b>Credit Score:</b> <code>{credit.get('creditScore')}</code>
-💎 <b>Tiêu hao Kim Cương:</b> <code>{d.get('diamondCostRes', {}).get('diamondCost')}</code>
-🧥 <b>Quần áo:</b> <code>{profile.get('clothes')}</code>
-✍️ <b>Chữ ký:</b> <code>{social.get('signature')}</code>
+🧥 <b>Outfit:</b> <code>{profile.get('EquippedOutfit')}</code>
+✍️ <b>Chữ ký:</b> <code>{social.get('AccountSignature')}</code>
 """
 
-    # Avatar và Outfit
-    avatar_url = f"https://aditya-banner-v3op.onrender.com/banner-image?uid={uid}&region={p.get('region')}"
-    outfit_url = f"https://outfitinfo.vercel.app/outfit-image?uid={uid}&region={p.get('region')}&key=99day"
-    info += f'\n<a href="{avatar_url}">🖼 Avatar của bạn</a>'
+        # Avatar và Outfit
+        avatar_url = f"https://aditya-banner-v3op.onrender.com/banner-image?uid={uid}&region={p.get('AccountRegion')}"
+        outfit_url = f"https://outfitinfo.vercel.app/outfit-image?uid={uid}&region={p.get('AccountRegion')}&key=99day"
+        info += f'\n<a href="{avatar_url}">🖼 Avatar của bạn</a>'
 
-    bot.send_message(chat_id, info, reply_to_message_id=message_id, parse_mode="HTML")
+        bot.send_message(chat_id, info, reply_to_message_id=message_id, parse_mode="HTML")
 
-    # Gửi ảnh outfit
-    try:
-        res_img = requests.get(outfit_url)
-        if res_img.status_code == 200 and "image" in res_img.headers.get("Content-Type", ""):
-            bot.send_photo(chat_id, BytesIO(res_img.content), caption="🧑‍🎤 Outfit của bạn")
-        else:
+        # Gửi ảnh outfit
+        try:
+            res_img = requests.get(outfit_url)
+            if res_img.status_code == 200 and "image" in res_img.headers.get("Content-Type", ""):
+                bot.send_photo(chat_id, BytesIO(res_img.content), caption="🧑‍🎤 Outfit của bạn")
+            else:
+                bot.send_message(chat_id, f"Không lấy được ảnh outfit. Xem tại đây: {outfit_url}")
+        except Exception as e:
+            print("Lỗi ảnh outfit:", e)
             bot.send_message(chat_id, f"Không lấy được ảnh outfit. Xem tại đây: {outfit_url}")
-    except Exception as e:
-        print("Lỗi ảnh outfit:", e)
-        bot.send_message(chat_id, f"Không lấy được ảnh outfit. Xem tại đây: {outfit_url}")
 
-    try:
-        bot.delete_message(chat_id, message_id)
-    except:
-        pass
+        try:
+            bot.delete_message(chat_id, message_id)
+        except:
+            pass
+
+    except Exception as e:
+        bot.reply_to(message, f"Lỗi xử lý: {str(e)}", parse_mode="HTML")
 # ========== Hàm gửi tin nhắn rồi xóa sau delay giây ==========
 def send_temp_message(chat_id, text, parse_mode=None, reply_to_message_id=None, delay=3):
     msg = bot.send_message(chat_id, text, parse_mode=parse_mode, reply_to_message_id=reply_to_message_id)
@@ -2307,7 +2310,7 @@ def handle_2fa(message):
     if len(params) == 1:  # Chưa nhập mã 2FA
         msg = bot.send_message(
             chat_id,
-            "⚠️ <b>Dùng mã sau lệnh /2fa</b>\nVí dụ: <code>/2fa 242RIHRGMWYHZ76GDDEZSP3XKK5TUJSQ</code>\n<code>/2fa L4IIITD3I6RH35BYDNU3D6FAL32CJFIQ</code>",
+            "⚠️ <b>Dùng mã sau lệnh /2fa</b>\nVí dụ: <code>/2fa 242RIHRGMWYHZ76GDDEZSP3XKK5TUJSQ</code>",
             reply_to_message_id=message_id,
             parse_mode="HTML"
         )
